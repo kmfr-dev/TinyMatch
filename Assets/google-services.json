@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "648547438111",
+    "firebase_url": "https://tinymatch-148ef-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "tinymatch-148ef",
+    "storage_bucket": "tinymatch-148ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:648547438111:android:d324d46fc8b51c185c8f2a",
+        "android_client_info": {
+          "package_name": "com.gihyun.tinymatch"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoeyjG4KOP9Ite6AMoYRL4LZHdvFn1Vjc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
