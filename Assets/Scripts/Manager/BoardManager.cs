@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class BoardManager : MonoBehaviour
 {
+    // 싱글톤 인스턴스
     public static BoardManager mInstance { get; private set; }
 
     // Board
@@ -9,6 +10,7 @@ public class BoardManager : MonoBehaviour
     // Input 
     private BoardInputHandler mInput = null;
 
+    // 보드 설정 -> 에디터에서 제어
     [SerializeField] 
     private BoardConfig mBoardConfig = null;
 
@@ -25,6 +27,7 @@ public class BoardManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
     private void Start()
     {
         InitBoard();

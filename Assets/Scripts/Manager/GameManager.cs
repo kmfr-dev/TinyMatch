@@ -1,15 +1,19 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    // 싱글톤 인스턴스
     public static GameManager mInstance { get; private set; } = null;
 
+    // 게임 룰 -> 에디터에서 제어
     [SerializeField]
     private GameRuleConfig mGameConfig = null;
 
     // 제한시간 관련
     public float mCurTime { get; private set; } = 0f;
+    // 현재 카운트다운이 진행중인지
     public bool mIsCountDown { get; private set; } = false;
 
     // 제한시간 이벤트
@@ -30,13 +34,10 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    private void Start()
-    {
-        
-    }
 
     private void Update()
     {
+        // 제한시간 타이머
         if(mIsCountDown && mCurTime > 0f)
         {
             mCurTime -= Time.deltaTime;
@@ -56,24 +57,40 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // 제한시간 설정 및 카운트다운 시작
     public void GameStart()
     {
         mIsCountDown = true;
         mCurTime = mGameConfig.TimeRemaining;
     }
 
+    // 게임 종료 후 팝업 활성화
     public void GameFinish()
     {
         int score = ScoreManager.mInstance.mCurScore;
-        // Firebase DB에 저장시도
-        FireBaseManager.mInstance.SaveScore(score);
 
-        OnGameFinished?.Invoke();
+        string titleText = "Game Finished!";
+        string contentText = $"당신의 점수는 {score}점 입니다.\n 재시작 or 타이틀로";
+
+        UIManager.mInstance?.OpenConfrim(new ConfirmContent(titleText, contentText), () =>
+            {
+                ResetGame();
+                UIManager.mInstance?.CloseConfirm();
+            },
+            LoadToTitle
+            );
     }
 
+    // 보드판, 점수판 리셋
     public void ResetGame()
     {
         BoardManager.mInstance?.ResetBoard();
         ScoreManager.mInstance?.ResetScore();
+    }
+
+    // 타이틀로 씬전환
+    public void LoadToTitle()
+    {
+        SceneManager.LoadScene("Title");
     }
 }

@@ -26,14 +26,14 @@ public class BoardInputHandler : MonoBehaviour
     private void HandleInput()
     {
         // 지금 매치 처리중이면 return
-        if (mBoard.mIsProcessing)
+        if (mBoard.mIsProcessing || false == GameManager.mInstance?.mIsCountDown)
             return;
 
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        if (Pointer.current.press.wasPressedThisFrame)
         {
             OnMouseDownHandler();
         }
-        else if (Mouse.current.leftButton.wasReleasedThisFrame)
+        else if (Pointer.current.press.wasReleasedThisFrame)
         {
             OnMouseUpHandler();
         }

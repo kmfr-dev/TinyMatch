@@ -5,18 +5,20 @@ using UnityEngine;
 
 public class Block : MonoBehaviour
 {
+    // 기본 블록 설정값 -> 에디터에서 제어
     [SerializeField]
     private BlockConfig mBlockConfig = null;
 
+    // 실제 블록 데이터
     public BlockData mBlockData { get; private set; } = null;
 
     private void Awake()
     {
+        // 블록데이터 생성 및 초기 위치 세팅
         mBlockData = new BlockData();
         mBlockData.TargetPos = transform.position;
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (null == mBlockData)
@@ -34,6 +36,7 @@ public class Block : MonoBehaviour
         }
     }
 
+    // 부드럽게 블럭이 삭제되는 코루틴 함수
     public IEnumerator SMmoothDestroyBlock()
     {
         float currentTime = 0f;

@@ -1,8 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEngine.Rendering.DebugUI.Table;
 
 public class Board : MonoBehaviour
 {
@@ -112,6 +110,7 @@ public class Board : MonoBehaviour
         return block;
     }
 
+    // 블럭 교체 함수
     private void SwapBlock(in Vector2Int _startPos, in Vector2Int _targetPos)
     {
         // 범위 체크
@@ -160,6 +159,7 @@ public class Board : MonoBehaviour
         StartCoroutine(SwapSequence(_startPos, _targetPos));
     }
 
+    // 블럭 교체 메인 로직 함수
     private IEnumerator SwapSequence(Vector2Int _startPos, Vector2Int _targetPos)
     {
         mIsProcessing = true;
@@ -220,7 +220,7 @@ public class Board : MonoBehaviour
         yield return new WaitForSeconds(0.3f);
     }
 
-    // 맨위 빈칸에 새 블록 생성
+    // 블럭 매치 후 블럭 리필 함수
     private IEnumerator RefillBoardRoutine()
     {
         for(int x = 0; x < mBoardData.mWidth; ++x)
@@ -247,6 +247,7 @@ public class Board : MonoBehaviour
         yield return null;
     }
 
+    // 위치값으로 블럭 얻어오는함수
     public Block GetBlockAtPos(in Vector2 _worldPos)
     {
         if (null == mBoardData)
@@ -315,9 +316,11 @@ public class Board : MonoBehaviour
             StartCoroutine(ShuffleBoardRoutine());
         }
 
+        // 게임시작
         GameManager.mInstance?.GameStart();
     }
 
+    // 보드 셔플 함수
     private IEnumerator ShuffleBoardRoutine()
     {
         mIsProcessing = true;
@@ -383,7 +386,8 @@ public class Board : MonoBehaviour
         yield return new WaitForSeconds(0.3f);
         mIsProcessing = false;
     }
-
+    
+    // 강제로 매치 만드는 함수 - 보드 셔플 시 사용
     private void CreateFourMatch()
     {
         int randomBlockIndex = Random.Range(0, mBoardConfig.mBlockPrefabs.Length - 1);
@@ -403,6 +407,7 @@ public class Board : MonoBehaviour
         }
     }
 
+    // 실제로 블럭 매치 진행하는 함수
     private IEnumerator PostMatchProcessRoutine()
     {
         mIsProcessing = true;
@@ -441,6 +446,7 @@ public class Board : MonoBehaviour
             // 4. 빈칸 채우기
             yield return StartCoroutine(RefillBoardRoutine());    
 
+            // 빈칸 채울때 까지 대기
             yield return new WaitForSeconds(0.5f);
         }
 
@@ -459,7 +465,7 @@ public class Board : MonoBehaviour
     private void ChangeRandomBlock(Block _targetBlock)
     {
         string currentType = _targetBlock.mBlockData.BlockType;
-        int randomIndex;
+        int randomIndex = 0;
 
         // 현재와 다른 타입이 나올 때까지 랜덤 돌리기
         do
