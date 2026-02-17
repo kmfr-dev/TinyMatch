@@ -171,8 +171,9 @@ public class Board : MonoBehaviour
         yield return new WaitForSeconds(0.3f);
 
         // 매치 판정 시작
-        List<List<Block>> allMatches = mBoardData.mBlocks.FindAllMatches(mBoardConfig.MinMatchCount);
-        
+        MatchFinder matchFinder = BoardManager.mInstance?.mMatchFinder;
+        List<List<Block>> allMatches = matchFinder?.FindAllMatches(mBoardData.mBlocks, mBoardConfig.MinMatchCount);
+
         // 매치된게있다면 터트리기
         if (allMatches.Count > 0)
         {
@@ -290,30 +291,34 @@ public class Board : MonoBehaviour
     // 초기 매치 방지 및 무브락 방지 함수
     private void FixInitialMatches()
     {
+        MatchFinder matchFinder = BoardManager.mInstance?.mMatchFinder;
+
         // 1. 매치가 발견되는 동안 계속 반복
         while (true)
         {
             // MatchFinder를 통해 현재 매치된 리스트를 가져옴
-            List<List<Block>> allMatches = mBoardData.mBlocks.FindAllMatches(mBoardConfig.MinMatchCount);
+            List<List<Block>> allMatches = matchFinder.FindAllMatches(mBoardData.mBlocks,mBoardConfig.MinMatchCount);
 
-            // 매치가 하나도 없으면 루프 탈출! 성공!
-            if (allMatches.Count <= 0)
-                break;
-
-            foreach (var matchGroup in allMatches)
+            // 매치그룹이 하나라도 있다면
+            if (allMatches.Count > 0)
             {
-                // 각 매치 그룹의 첫 번째 블록만 색상을 바꿔도 매치는 깨진다
-                ChangeRandomBlock(matchGroup[0]);
+                    // 각 매치 그룹의 첫 번째 블록만 색상을 바꿔도 매치는 깨진다
+                foreach (List<Block> matchGroup in allMatches)
+                    ChangeRandomBlock(matchGroup[0]);
+
+                continue;
             }
-        }
 
-        // 2. 플레이어가 한번 이동 시 매치를 만들 수 있는지 체크
-        bool hasPossibleMatch = mBoardData.mBlocks.HasPossibleMoves(mBoardConfig.MinMatchCount);
 
-        // 만약 만들 수 없다면 셔플
-        if (false == hasPossibleMatch)
-        {
-            StartCoroutine(ShuffleBoardRoutine());
+            // 2. 플레이어가 한번 이동 시 매치를 만들 수 있는지 체크, 만들지 못하면 보드 셔플
+            if(false == matchFinder.HasPossibleMoves(mBoardData.mBlocks, mBoardConfig.MinMatchCount))
+            {
+                StartCoroutine(ShuffleBoardRoutine());
+                continue;
+            }
+
+            // 3. 둘다 통과시 탈출
+            break;
         }
 
         // 게임시작
@@ -324,6 +329,8 @@ public class Board : MonoBehaviour
     private IEnumerator ShuffleBoardRoutine()
     {
         mIsProcessing = true;
+
+        MatchFinder matchFinder = BoardManager.mInstance?.mMatchFinder;
 
         int width = mBoardData.mWidth;
         int height = mBoardData.mHeight;
@@ -365,9 +372,9 @@ public class Board : MonoBehaviour
             // 셔플 이후 검증
 
             // 1. 매치되는게 하나라도 있는지 확인
-            bool IsMatch = mBoardData.mBlocks.FindAllMatches(mBoardConfig.MinMatchCount).Count > 0;
+            bool IsMatch = matchFinder.FindAllMatches(mBoardData.mBlocks,mBoardConfig.MinMatchCount).Count > 0;
             // 2. 움직일 수 있는지 확인
-            bool canMove = mBoardData.mBlocks.HasPossibleMoves(mBoardConfig.MinMatchCount);
+            bool canMove = matchFinder.HasPossibleMoves(mBoardData.mBlocks,mBoardConfig.MinMatchCount);
             // 반영
             hasMove = !IsMatch && canMove;
 
@@ -413,16 +420,18 @@ public class Board : MonoBehaviour
         mIsProcessing = true;
         int comboCount = 0;
 
+        MatchFinder matchFinder = BoardManager.mInstance?.mMatchFinder;
+
         while(mIsProcessing)
         {
             // 1. 매치 검사
-            List<List<Block>> allMatches = mBoardData.mBlocks.FindAllMatches(mBoardConfig.MinMatchCount);
+            List<List<Block>> allMatches = matchFinder.FindAllMatches(mBoardData.mBlocks,mBoardConfig.MinMatchCount);
 
             // 더이상 매치가 없으면 종료
             if (0 >= allMatches.Count)
                 break;
 
-            // 2. 블록 제거
+            // 2. 제거할 블록 취합
             HashSet<Block> blocksToDestroy = new HashSet<Block>();
             foreach(List<Block> blocks in allMatches)
             {
@@ -453,7 +462,7 @@ public class Board : MonoBehaviour
         yield return new WaitForSeconds(0.3f);
 
         // 5. 터트린 후 매치가 생기는지 확인
-        bool hasPossibleMatch = mBoardData.mBlocks.HasPossibleMoves(mBoardConfig.MinMatchCount);
+        bool hasPossibleMatch = matchFinder.HasPossibleMoves(mBoardData.mBlocks,mBoardConfig.MinMatchCount);
         // 매치가 생기지 않으면 셔플
         if (false == hasPossibleMatch)
             yield return StartCoroutine(ShuffleBoardRoutine());

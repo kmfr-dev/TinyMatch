@@ -3,7 +3,10 @@ using UnityEngine;
 public class BoardManager : MonoBehaviour
 {
     // 싱글톤 인스턴스
-    public static BoardManager mInstance { get; private set; }
+    public static BoardManager mInstance { get; private set; } = null;
+
+    // 매치여부 확인 기능을 담당하는 객체
+    public MatchFinder mMatchFinder { get; private set; } = null;
 
     // Board
     private GameObject mBoardObj = null;
@@ -30,18 +33,24 @@ public class BoardManager : MonoBehaviour
 
     private void Start()
     {
-        InitBoard();
+        Init();
     }
 
     // 보드 초기화 함수
-    private void InitBoard()
+    private void Init()
     {
         if (null == mBoardObj)
         {
+            // 매치 파인더 초기화
+            mMatchFinder = new MatchFinder();
+            mMatchFinder.Init(mBoardConfig);
+
+            // 보드 초기화
             mBoardObj = new GameObject("Board");
             Board BoardComp = mBoardObj.AddComponent<Board>();
             BoardComp?.Init(mBoardConfig);
 
+            // 입력 설정
             mInput = mBoardObj.AddComponent<BoardInputHandler>();
             mInput.mBoard = BoardComp;
         }
@@ -58,8 +67,6 @@ public class BoardManager : MonoBehaviour
        if(null != mBoardObj)
         {
             mBoardObj.GetComponent<Board>()?.Clear();
-            Destroy(mBoardObj);
-            mBoardObj = null;
         }
     }
 
@@ -67,6 +74,6 @@ public class BoardManager : MonoBehaviour
     public void ResetBoard()
     {
         DestroyBoard();
-        InitBoard();
+        Init();
     }
 }

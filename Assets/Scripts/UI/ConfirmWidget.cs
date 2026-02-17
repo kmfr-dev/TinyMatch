@@ -16,7 +16,7 @@ public class ConfirmWidget : MonoBehaviour
     // 버튼 -> 에디터에서 설정
     [SerializeField]
     private Button mAcceptBtn = null;
-    [SerializeField]
+    [SerializeField] 
     private Button mCancelBtn = null;
 
     // 머리말, 본문 텍스트 설정

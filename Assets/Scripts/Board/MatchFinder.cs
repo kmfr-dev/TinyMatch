@@ -1,27 +1,38 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class MatchFinder
+public class MatchFinder
 {
+    private bool[,] mVisited = null;
+    private Queue<Vector2Int> mQueue = null;
+
     // 방향 배열
-    private static readonly Vector2Int[] mDir =
+    private readonly Vector2Int[] mDir =
     {
         Vector2Int.up,
         Vector2Int.down,
         Vector2Int.left,
         Vector2Int.right
     };
+    public void Init(BoardConfig _boardConfig)
+    {
+        if (null == _boardConfig)
+            return;
+
+        mVisited = new bool[_boardConfig.Width, _boardConfig.Height];
+        mQueue = new Queue<Vector2Int>();
+    }
 
     // 지금 매치된 모든 블럭들을 얻어오는 함수
-    public static List<List<Block>> FindAllMatches(this Block[,] _blocks, int _minMatch)
+    public List<List<Block>> FindAllMatches(in Block[,] _blocks, int _minMatch)
     {
         int width = _blocks.GetLength(0);
         int height = _blocks.GetLength(1);
 
         List<List<Block>> allMatches = new List<List<Block>>();
-        
-        // 방문여부 배열
-        bool[,] visited = new bool[width, height];
+
+        // 방문여부 배열 초기화
+        System.Array.Clear(mVisited, 0, mVisited.Length);
 
         // 전체 블럭 순회
         for (int x = 0; x < width; x++)
@@ -29,10 +40,10 @@ public static class MatchFinder
             for (int y = 0; y < height; y++)
             {
                 // 방문하지 않았고, 블럭이 있다면
-                if (false == visited[x, y] && null != _blocks[x, y])
+                if (false == mVisited[x, y] && null != _blocks[x, y])
                 {
                     // 연결된 블럭들을 반환받는다.
-                    List<Block> connected = FindConnectedBlocks(_blocks, x, y, visited);
+                    List<Block> connected = FindConnectedBlocks(_blocks, x, y);
                     
                     // 블럭수가 최소 매치수보다 크다면 매치된 블럭조합을 추가
                     if (connected.Count >= _minMatch)
@@ -46,7 +57,7 @@ public static class MatchFinder
     }
 
     // 현재 연결된 블럭반환하는 함수
-    private static List<Block> FindConnectedBlocks(Block[,] _blocks, int _startX, int _startY, bool[,] _visited)
+    private List<Block> FindConnectedBlocks(in Block[,] _blocks, int _startX, int _startY)
     {
         // 블럭들을 담을 리스트
         List<Block> connected = new List<Block>();
@@ -54,21 +65,22 @@ public static class MatchFinder
         // 시작위치의 블럭 타입을 얻어온다.
         string targetType = _blocks[_startX, _startY].mBlockData.BlockType;
 
-        // BFS를 위한 큐
-        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        // BFS를 위한 큐 초기화
+        mQueue.Clear();
+
         // 시작 좌표 삽입
-        queue.Enqueue(new Vector2Int(_startX, _startY));
+        mQueue.Enqueue(new Vector2Int(_startX, _startY));
 
         // 해당위치 방문 처리
-        _visited[_startX, _startY] = true;
+        mVisited[_startX, _startY] = true;
 
         int width = _blocks.GetLength(0);
         int height = _blocks.GetLength(1);
 
         // BFS 시작
-        while (queue.Count > 0)
+        while (mQueue.Count > 0)
         {
-            Vector2Int curr = queue.Dequeue();
+            Vector2Int curr = mQueue.Dequeue();
             connected.Add(_blocks[curr.x, curr.y]);
 
             foreach (Vector2Int dir in mDir)
@@ -82,7 +94,7 @@ public static class MatchFinder
                     continue;
 
                 // 이미 방문했다면 건너뜀
-                if (_visited[nextX, nextY])
+                if (mVisited[nextX, nextY])
                     continue;
 
                 // 다음좌표의 블럭이 비어있다면 건너뜀
@@ -94,8 +106,8 @@ public static class MatchFinder
                     continue;
 
                 // 방문처리 및 다음좌표 삽입
-                _visited[nextX, nextY] = true;
-                queue.Enqueue(new Vector2Int(nextX, nextY));
+                mVisited[nextX, nextY] = true;
+                mQueue.Enqueue(new Vector2Int(nextX, nextY));
             }
         }
 
@@ -103,11 +115,11 @@ public static class MatchFinder
     }
 
     // 현재 플레이어가 움직여서 매치를 만들 수 있는지 확인하는 함수
-    public static bool HasPossibleMoves(this Block[,] _blocks, int _minMatch)
+    public bool HasPossibleMoves(in Block[,] _blocks, int _minMatch)
     {
         int width = _blocks.GetLength(0);
         int height = _blocks.GetLength(1);
-
+        
         // 블럭 전체순회
         for (int x = 0; x < width; x++)
         {
@@ -117,21 +129,21 @@ public static class MatchFinder
                 if (null == _blocks[x, y]) 
                     continue;
 
-                // src : 원래 위치
-                // dest : 이동할 위치 (실제로 이동은 x 시뮬레이션만)
-                Vector2Int src = new Vector2Int(x, y);
-                Vector2Int dest = new Vector2Int(x + 1, y);
+                // origin : 원래 위치
+                // goal : 이동할 위치 (실제로 이동하지는 않음)
+                Vector2Int origin = new Vector2Int(x, y);
+                Vector2Int goal = new Vector2Int(x + 1, y);
 
                 // 오른쪽 블록과 교환 시뮬레이션
-                if (x < width - 1 && WouldMatchAfterSwap(_blocks, src, dest, _minMatch)) 
+                if (x < width - 1 && WouldMatchAfterSwap(_blocks, origin, goal, _minMatch)) 
                     return true;
 
-                // dest 위치 변경
-                dest.x = x;
-                dest.y = y + 1;
+                // goal 위치 변경
+                goal.x = x;
+                goal.y = y + 1;
 
                 // 위쪽 블록과 교환 시뮬레이션
-                if (y < height - 1 && WouldMatchAfterSwap(_blocks, src, dest, _minMatch)) 
+                if (y < height - 1 && WouldMatchAfterSwap(_blocks, origin, goal, _minMatch)) 
                     return true;
             }
         }
@@ -139,7 +151,7 @@ public static class MatchFinder
     }
 
     // 블록 스왑 시뮬레이션 중, 매치가 일어나는지 확인하는 함수
-    private static bool WouldMatchAfterSwap(Block[,] _blocks, in Vector2Int _p1, in Vector2Int _p2, int _minMatch)
+    private bool WouldMatchAfterSwap(in Block[,] _blocks, in Vector2Int _p1, in Vector2Int _p2, int _minMatch)
     {
         // 시뮬레이션용 카운트 (실제 배열을 바꾸지 않고 타입만 체크)
         // 만약 시뮬을 돌렸을 때 최소 매치수 보다 크다면 매치가 가능하다는 뜻
@@ -152,7 +164,7 @@ public static class MatchFinder
     }
 
     // 가로, 세로 블럭을 합산하여 최대값을 반환하는 함수
-    private static int CountConnectedSim(Block[,] _blocks, in Vector2Int _startPos, string _type, in Vector2Int _p1, in Vector2Int _p2)
+    private int CountConnectedSim(in Block[,] _blocks, in Vector2Int _startPos, string _type, in Vector2Int _p1, in Vector2Int _p2)
     {
         // 가로 합산 (좌, 우 , 자신)
         int horizanCount = 1 + CountInDir(_blocks, _startPos, Vector2Int.left, _type, _p1, _p2) +
@@ -166,7 +178,7 @@ public static class MatchFinder
     }
 
     // 인자로 방향을 넘겨 해당방향으로 블럭이 얼마나 있는지 확인 하는 함수
-    private static int CountInDir(Block[,] _blocks, in Vector2Int _curPos, in Vector2Int _dir, string _type, in Vector2Int _p1, in Vector2Int _p2)
+    private int CountInDir(in Block[,] _blocks, in Vector2Int _curPos, in Vector2Int _dir, string _type, in Vector2Int _p1, in Vector2Int _p2)
     {
         int width = _blocks.GetLength(0); 
         int height = _blocks.GetLength(1);
